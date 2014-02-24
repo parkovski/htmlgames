@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Nines</title>
+  <style>
+    * {
+      border: none;
+      margin: 0;
+      padding: 0;
+      vertical-align: top;
+      font-size: 16pt;
+    }
+    html, body, .page {
+      margin: 0px;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      overflow: hidden;
+      font-family: Helvetica;
+    }
+    .panel {
+      position: relative;
+      box-sizing: border-box;
+      float: left;
+    }
+    .panel2 {
+      position: relative;
+      box-sizing: border-box;
+    }
+    .quarter {
+      width: 25%;
+      height: 100%;
+    }
+    .half {
+      width: 50%;
+      height: 100%;
+    }
+    .topthird {
+      height: 50%;
+      width: 100%;
+      padding: 0 0 1em 0;
+    }
+    .middlethird {
+      margin-top: -1em;
+      height: 2em;
+      width: 100%;
+      z-index: 2;
+    }
+    .bottomthird {
+      bottom: 0;
+      height: 50%;
+      padding: 1em 0 0 0;
+      margin-top: -1em;
+    }
+
+    .gridtop {
+      position: relative;
+      height: 50%;
+    }
+
+    .grid {
+      position: relative;
+      margin-top: -3em;
+    }
+
+    .row {
+    }
+
+    div.hidden {
+      background-color: #56d;
+      color: white;
+    }
+
+    .cell {
+      display: inline-block;
+      border: 1px solid #22a;
+      border-radius: 2px;
+      margin: 0 0 6px 0;
+      width: 60px;
+      padding: 0.5em;
+      height: 1em;
+      color: black;
+      cursor: pointer;
+      font-weight: bold;
+      background-color: #f9fafe;
+    }
+
+    div.reduced, .dummy {
+      border: 1px solid #aaa;
+      background-color: #ddd;
+    }
+
+    .red-suit {
+      color: #c00;
+    }
+
+    #instructions {
+      position: absolute;
+      right: 0;
+      top: 0;
+      margin: 2em 2em 0 0;
+      padding: 5px;
+      font-weight: bold;
+      border: 1px solid #aaa;
+      background-color: #eee;
+      border-radius: 3px;
+    }
+    #setplayers {
+      position: absolute;
+      right: 0;
+      top: 0;
+      margin: 4.5em 2em 0 0;
+      padding: 5px;
+      font-weight: bold;
+      border: 1px solid #aaa;
+      color: #a00;
+      background-color: #eee;
+      border-radius: 3px;
+    }
+    #setplayers2, #setplayers3, #setplayers4 {
+      padding: 5px;
+      border: 1px solid #700;
+      cursor: pointer;
+      background-color: #edd;
+    }
+    div#dragCard {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 5;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="panel quarter">
+      <div class="gridtop"></div>
+      <div class="grid" id="grid1">
+        <div class="row">
+          <div class="cell hidden" id="p10"></div>
+          <div class="cell hidden" id="p11"></div>
+          <div class="cell hidden" id="p12"></div>
+        </div>
+        <div class="row">
+          <div class="cell hidden" id="p13"></div>
+          <div class="cell hidden" id="p14"></div>
+          <div class="cell hidden" id="p15"></div>
+        </div>
+        <div class="row">
+          <div class="cell hidden" id="p16"></div>
+          <div class="cell hidden" id="p17"></div>
+          <div class="cell hidden" id="p18"></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel half">
+      <div class="panel2 topthird">
+        <div class="gridtop"></div>
+        <div class="grid" id="grid2">
+          <div class="row">
+            <div class="cell hidden" id="p20"></div>
+            <div class="cell hidden" id="p21"></div>
+            <div class="cell hidden" id="p22"></div>
+          </div>
+          <div class="row">
+            <div class="cell hidden" id="p23"></div>
+            <div class="cell hidden" id="p24"></div>
+            <div class="cell hidden" id="p25"></div>
+          </div>
+          <div class="row">
+            <div class="cell hidden" id="p26"></div>
+            <div class="cell hidden" id="p27"></div>
+            <div class="cell hidden" id="p28"></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel2 middlethird">
+        <div class="cell hidden" id="deck">Deck</div>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <div class="cell" id="discard"></div>
+      </div>
+      <div class="panel2 bottomthird">
+        <div class="gridtop"></div>
+        <div class="grid" id="grid4">
+          <div class="row">
+            <div class="cell hidden" id="p40"></div>
+            <div class="cell hidden" id="p41"></div>
+            <div class="cell hidden" id="p42"></div>
+          </div>
+          <div class="row">
+            <div class="cell hidden" id="p43"></div>
+            <div class="cell hidden" id="p44"></div>
+            <div class="cell hidden" id="p45"></div>
+          </div>
+          <div class="row">
+            <div class="cell hidden" id="p46"></div>
+            <div class="cell hidden" id="p47"></div>
+            <div class="cell hidden" id="p48"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel quarter">
+      <div class="gridtop"></div>
+      <div class="grid" id="grid3">
+        <div class="row">
+          <div class="cell hidden" id="p30"></div>
+          <div class="cell hidden" id="p31"></div>
+          <div class="cell hidden" id="p32"></div>
+        </div>
+        <div class="row">
+          <div class="cell hidden" id="p33"></div>
+          <div class="cell hidden" id="p34"></div>
+          <div class="cell hidden" id="p35"></div>
+        </div>
+        <div class="row">
+          <div class="cell hidden" id="p36"></div>
+          <div class="cell hidden" id="p37"></div>
+          <div class="cell hidden" id="p38"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="instructions">Nines!</div>
+  <div id="setplayers">
+    How many people are playing?
+    <span id="setplayers2">2</span>
+    <span id="setplayers3">3</span>
+    <span id="setplayers4">4</span>
+  </div>
+  <div id="dragCard" class="cell" style="display: none"></div>
+  <script>
+    var stage = '';
+    var actions = {};
+    var directions = {
+      'initialTurnOver': 'Pick the cards you want to turn over',
+      'draw': '$player take your turn',
+      'replaceCard': '$player place the card on your grid',
+      'gameOver': 'Game over'
+    };
+
+    var player = 0;
+    var playerNames = [
+      'Player 1 (left)',
+      'Player 2 (top)',
+      'Player 3 (right)',
+      'Player 4 (bottom)'
+    ];
+
+    function setStage(st) {
+      stage = st;
+      instrElem.innerText
+        = directions[stage].replace('$player', playerNames[player]);
+    }
+
+    var cards = [];
+    [1, 2].forEach(function() {
+      ['H', 'D', 'C', 'S'].forEach(function(suit) {
+        ['A', 2, 3, 4, 5, 6, 7, 8, 9, 10, 'J', 'Q', 'K'].forEach(function(value) {
+          cards.push(suit + value);
+        });
+      });
+    });
+    (function() {
+      for (var i = 0; i < 10000; ++i) {
+        var i1 = Math.floor(Math.random() * cards.length);
+        var i2 = Math.floor(Math.random() * cards.length);
+        var temp = cards[i1];
+        cards[i1] = cards[i2];
+        cards[i2] = temp;
+      }
+    })();
+
+    var players = [];
+    var discard = [];
+
+    var setPlayerNumber = function(nr) {
+      for (var i = 0; i < nr; ++i) {
+        players.push([]);
+        for (var j = 0; j < 9; ++j) {
+          players[i].push(cards[0]);
+          cards = cards.slice(1);
+          document.getElementById(('p' + (i + 1)) + j).onclick = doAction;
+        }
+      }
+
+      document.getElementById('deck').onclick = doAction;
+      document.getElementById('discard').onclick = doAction;
+    };
+
+    var instrElem = document.getElementById('instructions');
+    var dragElem = document.getElementById('dragCard');
+    var dragCard = null;
+
+    var playerNrFunction = function(nr) {
+      return function() {
+        setPlayerNumber(nr);
+        document.getElementById('setplayers').style.visibility = 'hidden';
+        for (var i = nr + 1; i < 5; i++) {
+          document.getElementById('grid' + i).style.visibility = 'hidden';
+        }
+        setStage('initialTurnOver');
+      };
+    };
+    document.getElementById('setplayers2').onclick = playerNrFunction(2);
+    document.getElementById('setplayers3').onclick = playerNrFunction(3);
+    document.getElementById('setplayers4').onclick = playerNrFunction(4);
+
+    function assignCard(card, name) {
+      var suit = name[0];
+      var val = name.substr(1);
+
+      if (card.classList.contains('reduced')) {
+        return;
+      }
+
+      if (suit === 'H' || suit === 'D') {
+        card.classList.add('red-suit');
+      } else {
+        card.classList.remove('red-suit');
+      }
+
+      suit = {
+        'S': '\u2660',
+        'H': '\u2665',
+        'D': '\u2666',
+        'C': '\u2663'
+      }[suit];
+
+      card.innerText = val + ' ' + suit;
+    }
+
+    function doAction() {
+      if (!actions[stage]) {
+        return;
+      }
+      actions[stage](this.id);
+    }
+
+    (function() {
+      var flippedCards = [0, 0, 0, 0];
+      var totalFlippedCards = 0;
+      actions.initialTurnOver = function(id) {
+        if (id[0] === 'p') {
+          var pnr = id.substr(1, 1) - 1;
+          var cnr = id.substr(2);
+
+          if (flippedCards[pnr] === 2) {
+            return;
+          }
+          var card = document.getElementById(id);
+          card.classList.remove('hidden');
+          assignCard(card, players[pnr][cnr]);
+          ++flippedCards[pnr];
+          ++totalFlippedCards;
+          if (totalFlippedCards === players.length * 2) {
+            setStage('draw');
+          }
+        }
+      };
+    })();
+
+    document.onmousemove = function(e) {
+      dragElem.style.left = e.pageX + 5 + 'px';
+      dragElem.style.top = e.pageY + 5 + 'px';
+    };
+
+    actions.draw = function(id) {
+      if (id === 'deck') {
+        dragCard = cards[0];
+        assignCard(dragElem, cards[0]);
+        cards = cards.slice(1);
+        dragElem.style.display = 'block';
+        setStage('replaceCard');
+      } else if (id === 'discard' && discard.length) {
+        dragCard = discard[0];
+        assignCard(dragElem, discard[0]);
+        dragElem.style.display = 'block';
+        setStage('replaceCard');
+
+        discard = discard.slice(1);
+        if (discard.length) {
+          assignCard(document.getElementById('discard'), discard[0]);
+        } else {
+          document.getElementById('discard').innerText = '';
+        }
+      }
+    };
+
+    actions.replaceCard = function(id) {
+      var pid = id[1] - 1;
+      if (id[0] === 'p' && pid === player) {
+        var oldCard = players[pid][id[2]];
+        players[pid][id[2]] = dragCard;
+        var card = document.getElementById(id);
+        card.classList.remove('hidden');
+        assignCard(card, dragCard);
+        dragElem.style.display = 'none';
+
+        discard.unshift(oldCard);
+        assignCard(document.getElementById('discard'), oldCard);
+
+        nextTurn();
+      } else if (id === 'discard') {
+        discard.unshift(dragCard);
+        assignCard(document.getElementById('discard'), dragCard);
+        dragElem.style.display = 'none';
+
+        nextTurn();
+      }
+    };
+
+    function nextTurn() {
+      if (checkGameOver()) {
+        showScores();
+        return;
+      }
+      checkReductions(player);
+      ++player;
+      player %= players.length;
+      setStage('draw');
+    }
+
+    var lastPlayer = -1;
+    function checkGameOver() {
+      console.log('cgo');
+      if (lastPlayer === player) {
+        console.log('ending game');
+        uncoverAll();
+        setStage('gameOver');
+        return true;
+      }
+      if (lastPlayer !== -1) {
+        console.log('last rounds');
+        return false;
+      }
+      for (var i = 0; i < 9; ++i) {
+        var id = 'p' + (player + 1) + i;
+        var elem = document.getElementById(id);
+        if (elem.classList.contains('hidden')) return false;
+      }
+      document.getElementById('setplayers').style.visibility = 'inherit';
+      document.getElementById('setplayers').innerHTML = '';
+      document.getElementById('setplayers').innerText = 'Last rounds';
+      lastPlayer = player - 1;
+      if (lastPlayer == -1) lastPlayer = players.length - 1;
+      return false;
+    }
+
+    function checkReductions(pnr) {
+      ++pnr;
+      [0, 1, 2].forEach(function(start) {
+        var id1 = 'p' + pnr + start;
+        var id2 = 'p' + pnr + (start + 3);
+        var id3 = 'p' + pnr + (start + 6);
+
+        var el1 = document.getElementById(id1);
+        var el2 = document.getElementById(id2);
+        var el3 = document.getElementById(id3);
+
+        if (el1.classList.contains('hidden')
+          || el2.classList.contains('hidden')
+          || el3.classList.contains('hidden')) return;
+
+        var c1 = players[pnr-1][start];
+        var c2 = players[pnr-1][start + 3];
+        var c3 = players[pnr-1][start + 6];
+
+        if (c1.substr(1) === c2.substr(1) && c1.substr(1) === c3.substr(1)) {
+          discard.push(c1);
+          discard.push(c2);
+          discard.push(c3);
+
+          el1.classList.add('reduced');
+          el2.classList.add('reduced');
+          el3.classList.add('reduced');
+
+          players[pnr-1][start] = '';
+          players[pnr-1][start + 3] = '';
+          players[pnr-1][start + 6] = '';
+        }
+      });
+    }
+
+    function uncoverAll() {
+      for (var i = 1; i <= players.length; ++i) {
+        for (var j = 0; j < 9; ++j) {
+          var id = 'p' + i + j
+          var el = document.getElementById(id);
+          if (el.classList.contains('hidden')) {
+            assignCard(el, players[i-1][j]);
+            el.classList.remove('hidden');
+          }
+        }
+        checkReductions(i-1);
+      }
+    }
+
+    function showScores() {
+      var message = '';
+      var scores = {
+        'A': 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10,
+        'J': -2, 'Q': 13, 'K': 0, '': 0
+      };
+      var winner = '';
+      var winnerScore = 100000;
+      for (var i = 0; i < players.length; ++i) {
+        var score = 0;
+        for (var j = 0; j < 9; ++j) {
+          score += scores[players[i][j].substr(1)];
+        }
+
+        if (score < winnerScore) {
+          winner = 'P' + (i+1);
+          winnerScore = score;
+        } else if (score === winnerScore) {
+          winner += ', P' + (i+1);
+        }
+
+        message += 'P' + (i+1) + ': ' + score + '. ';
+      }
+
+      if (winner.length > 2) {
+        winner = 'Tie: ' + winner;
+      } else {
+        winner = 'Winner: ' + winner;
+      }
+      document.getElementById('setplayers').innerText = winner;
+
+      directions.gameOver = message;
+      setStage('gameOver');
+    }
+  </script>
+</body>
+</html>

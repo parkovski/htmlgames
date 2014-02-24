@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body, html, .page {
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      overflow: hidden;
+    }
+    #page2 {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      background: url(../../../pictures/eatyou.png);
+      visibility: hidden;
+    }
+    .row {
+      position: relative;
+      width: 100%; height: 25%; margin: 5px 0;
+    }
+    .row:first-child {
+      height: 15%;
+      font: 60pt Helvetica bold;
+    }
+    .cell {
+      position: relative;
+      display: inline-block;
+      width: 30%;
+      height: 100%;
+      border: 1px solid #888888;
+      padding: auto;
+      font: 108pt Helvetica bold;
+      vertical-align: bottom;
+      margin: 0px;
+    }
+    .x {
+      color: black;
+      background-color: white;
+    }
+    .o {
+      color: red;
+      background-color: white;
+    }
+    .win {
+      background-color: yellow;
+    }
+    .grey {
+      background-color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="row">
+      TIC TAC TOE
+    </div>
+    <div class="row">
+      <div class="cell" id="0"></div>
+      <div class="cell" id="1"></div>
+      <div class="cell" id="2"></div>
+    </div>
+    <div class="row">
+      <div class="cell" id="3"></div>
+      <div class="cell" id="4"></div>
+      <div class="cell" id="5"></div>
+    </div>
+    <div class="row">
+      <div class="cell" id="6"></div>
+      <div class="cell" id="7"></div>
+      <div class="cell" id="8"></div>
+    </div>
+  </div>
+  <div id="page2">
+    <audio src="../../footfoot.wav" id="footfoot"></audio>
+  </div>
+  <script>
+    var isX = true;
+    var won = false;
+
+    var elems = document.getElementsByClassName('cell');
+
+
+    function click() {
+      if (won) {
+        return;
+      }
+      if (this.innerText.length) {
+        return;
+      }
+
+      if (isX) {
+        this.innerText = 'X';
+        this.classList.add('x');
+      } else {
+        this.innerText = 'O';
+        this.classList.add('o');
+      }
+
+      checkwin();
+
+      isX = !isX;
+    }
+
+    function checkwin() {
+      var combinations = [
+        [0,1,2],
+        [3,4,5],
+        [6,7,8],
+
+        [0,3,6],
+        [1,4,7],
+        [2,5,8],
+
+        [0,4,8],
+        [2,4,6]
+      ];
+
+      if (!combinations.some(function(c) {
+        if (wins(c)) {
+          won = true;
+          highlight(c);
+          footfoot();
+          return true;
+        }
+        return false;
+      })) {
+        if ([].every.call(elems, function(elem) {
+          return elem.innerText.length > 0;
+        })) {
+          elems[3].innerText = 'T';
+          elems[3].classList.add('grey');
+          elems[4].innerText = 'I';
+          elems[4].classList.add('grey');
+          elems[5].innerText = 'E';
+          elems[5].classList.add('grey');
+          footfoot();
+        }
+      }
+    }
+
+    function footfoot() {
+      var vol = 0;
+      var footfoot = document.getElementById('footfoot')
+      footfoot.volume = vol;
+      footfoot.play();
+      var volInterval = setInterval(function() {
+        if (vol < 1) {
+          vol += 0.01;
+        } else {
+          clearInterval(volInterval);
+        }
+        footfoot.volume = vol;
+      }, 125);
+      setTimeout(function() {
+        var it = document.getElementById('page2');
+        it.style.visibility = 'visible';
+        var rot = 0;
+        var add = 1;
+        var zoom = 1;
+        var phase2 = false;
+        setInterval(function() {
+          rot += add;
+          zoom += 0.0005;
+          if (!phase2) {
+            if (rot >= 10) add = -1;
+            if (rot <= -10) add = 1;
+          } else {
+            add += 0.2;
+          }
+          it.style['-webkit-transform'] = 'rotate('+rot+'deg)'
+            + ' scale('+zoom+')';
+        }, 25);
+        setTimeout(function() {
+          phase2 = true;
+          add = 3;
+        }, 7500)
+      }, 1000);
+    }
+
+    function wins(c) {
+      var ch = elems[c[0]].innerText;
+      if (ch.length !== 1) return false;
+      return c.every(function(i) {
+        if (elems[i].innerText != ch) {
+          return false;
+        }
+        return true;
+      });
+    }
+
+    function highlight(c) {
+      c.forEach(function(i) {
+        elems[i].classList.add('win');
+      });
+    }
+
+    [].forEach.call(elems, function(cell) {
+      cell.onclick = click;
+    });
+  </script>
+</body>
+</html>
