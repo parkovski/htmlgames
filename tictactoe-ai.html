@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tic-Tac-Toe</title>
+  <style>
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      line-height: 1.25;
+    }
+    
+    body {
+      background-color: black;
+      color: #0a0;
+      text-shadow: 1px 1px #004300;
+      font-size: 12pt;
+      font-family: Consolas, Monaco, monospace;
+      text-align: center;
+    }
+    
+    #pushdown {
+      position: relative;
+      content: ' ';
+      height: 50%;
+    }
+    
+    #screen {
+      position: relative;
+      display: inline-block;
+      top: -16em;
+      text-align: left;
+      border: 10px solid #111;
+      padding: 10px;
+      width: 80ch;
+      height: 32em;
+    }
+    
+    @-webkit-keyframes cursorBlink {
+      0%, 50% {
+        background-color: #0a0;
+        box-shadow: 1px 1px #004300;
+      }
+      51%, 100% {
+        background-color: black;
+        box-shadow: none;
+      }
+    }
+    @-moz-keyframes cursorBlink {
+      0%, 50% {
+        background-color: #0a0;
+        box-shadow: 1px 1px #004300;
+      }
+      51%, 100% {
+        background-color: black;
+        box-shadow: none;
+      }
+    }
+    @keyframes cursorBlink {
+      0%, 50% {
+        background-color: #0a0;
+        box-shadow: 1px 1px #004300;
+      }
+      51%, 100% {
+        background-color: black;
+        box-shadow: none;
+      }
+    }
+    
+    #cursor {
+      -webkit-animation: cursorBlink 1s infinite;
+      -moz-animation: cursorBlink 1s infinite;
+      animation: cursorBlink 1s infinite;
+    }
+    
+    table {
+      border-collapse: collapse;
+      border-spacing: 0;
+      margin: 0 auto;
+      
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      cursor: default;
+    }
+    
+    tbody, tr {
+      border: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    td {
+      border-style: solid;
+      border-color: #0a0;
+      border-top-width: 1em;
+      border-bottom-width: 1em;
+      border-left-width: 1ch;
+      border-right-width: 1ch;
+      padding: 1em 2ch;
+      cursor: pointer;
+    }
+    
+    td:hover {
+      background-color: #0a0;
+      color: black;
+      text-shadow: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="pushdown"></div>
+  <div id="screen">
+    Hello, it is time for some tic tac toe!<br>
+    I'll get the board ready. <span id="cursor">&nbsp;</span>
+    <br><br><br><br><br>
+    <table>
+      <tbody>
+        <tr>
+          <td id="sq0">&nbsp;</td>
+          <td id="sq1">&nbsp;</td>
+          <td id="sq2">&nbsp;</td>
+        </tr>
+        <tr>
+          <td id="sq3">&nbsp;</td>
+          <td id="sq4">&nbsp;</td>
+          <td id="sq5">&nbsp;</td>
+        </tr>
+        <tr>
+          <td id="sq6">&nbsp;</td>
+          <td id="sq7">&nbsp;</td>
+          <td id="sq8">&nbsp;</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+<script>
+  (function() {
+    'use strict';
+    
+    // Ye Olde Screen
+    function YOS(elem) {
+    }
+    
+    // -----
+    
+    function TicTacToe() {
+      this._turn = 0;
+      this.cells = Array(9);
+      for (var i = 0; i < this.cells.length; ++i) {
+        this.cells[i] = null;
+      }
+      
+      // An array of function(playerNumber).
+      // Called when the player changes.
+      this.turnAlertListeners = [];
+      
+      // An array of function(player, cell).
+      // Called when a play is completed.
+      this.playListeners = [];
+      
+      // Array of function(winner).
+      // Called after the game is over.
+      // If the game was a tie, winner will be -1.
+      this.gameOverListeners = [];
+    }
+    
+    // function(listenerArray, listenerArgs...)
+    TicTacToe.prototype._callListeners = function() {
+      var listenerArgs = [].slice.call(arguments, 1);
+      arguments[0].forEach(function(listener) {
+        listener.apply(this, listenerArgs);
+      });
+    };
+    
+    // Returns: 0, 1 = winner
+    // -1 = tie
+    // -2 = game still going.
+    TicTacToe.prototype._getWinner = function() {
+      // 0 1 2
+      // 3 4 5
+      // 6 7 8
+      //
+      // winning combos are:
+      // 0,1,2; 0,3,6; 0,4,8
+      // 1,4,7
+      // 2,5,8; 2,4,6
+      // 3,4,5
+      // 6,7,8
+      var combos = {
+        0: [[1, 2], [3, 6], [4, 8]],
+        1: [[4, 7]],
+        2: [[5, 8], [4, 6]],
+        3: [[4, 5]],
+        6: [[7, 8]]
+      };
+      
+      var primary, i, combo, player;
+      var self = this;
+      
+      for (primary in combos) {
+        if (combos.hasOwnProperty(primary)) {
+          player = self.cells[primary];
+          if (player === null) continue;
+          
+          // primary is the first cell to check.
+          // combo is the group of cells that need to match primary
+          // in order to register a win.
+          for (i = 0; i < combos[primary].length; ++i) {
+            combo = combos[primary][i];
+            if (combo.every(function(cell) { return self.cells[cell] === player; })) {
+              return player;
+            }
+          }
+        }
+      }
+      
+      // No winner. If all cells are filled, it's a tie.
+      // Otherwise, the game is still going.
+      if (self.cells.every(function(cell) { return cell !== null; })) {
+        return -1; // Tie
+      }
+      
+      return -2; // Game not over
+    };
+    
+    TicTacToe.prototype._nextTurn = function() {
+      // Is the game over?
+      var winner = this._getWinner();
+      if (winner !== -2) {
+        this._turn = -1;
+        this._callListeners(this.gameOverListeners, winner);
+        return;
+      }
+      
+      // (winner === -2) -> game is still going.
+      var turn = this._turn = (this._turn + 1) & 1; // alternate between 0 and 1
+      this._callListeners(this.turnAlertListeners, turn);
+    };
+    
+    TicTacToe.prototype.play = function(player, cell) {
+      if (this._turn !== player) return;
+      if (this.cells[cell] !== null) return;
+      
+      this.cells[cell] = player;
+      
+      this._callListeners(this.playListeners, player, cell);
+      this._nextTurn();
+    };
+    
+    // -----
+    
+    var game = new TicTacToe;
+    
+    game.playListeners.push(function(player, cell) {
+      document.getElementById('sq' + cell).innerText = ['X', 'O'][player];
+    });
+    
+    game.turnAlertListeners.push(function(player) {
+      if (player != 1) return;
+      
+      for (var i = 0; i < 9; ++i) {
+        if (game.cells[i] === null) {
+          game.play(1, i);
+        }
+      }
+    });
+    
+    game.gameOverListeners.push(function(player) {
+      alert('winner ' + player);
+    });
+    
+    var cells = document.getElementsByTagName('td');
+    for (var i = 0; i < cells.length; ++i) {
+      cells[i].addEventListener('click', (function(i) {
+        return function(e) {
+          game.play(0, i);
+        };
+      })(i));
+    }
+  })();
+</script>
+</html>
