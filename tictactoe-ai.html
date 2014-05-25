@@ -255,7 +255,7 @@
     var game = new TicTacToe;
     
     game.playListeners.push(function(player, cell) {
-      document.getElementById('sq' + cell).innerText = ['X', 'O'][player];
+      document.getElementById('sq' + cell).innerHTML = ['X', 'O'][player];
     });
     
     game.turnAlertListeners.push(function(player) {
