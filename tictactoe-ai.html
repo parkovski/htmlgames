@@ -102,10 +102,14 @@
       cursor: pointer;
     }
     
-    td:hover {
+    td:hover, a:hover {
       background-color: #0a0;
       color: black;
       text-shadow: none;
+    }
+    
+    a {
+      color: #0a0;
     }
   </style>
 </head>
@@ -113,7 +117,7 @@
   <div id="pushdown"></div>
   <div id="screen">
     Hello, it is time for some tic tac toe!<br>
-    I'll get the board ready. <span id="cursor">&nbsp;</span>
+    I'll get the board ready. <a id="reset" href="#">Reset game.</a> <span id="cursor">&nbsp;</span>
     <br><br><br><br><br>
     <table>
       <tbody>
@@ -171,7 +175,7 @@
     TicTacToe.prototype._callListeners = function() {
       var listenerArgs = [].slice.call(arguments, 1);
       arguments[0].forEach(function(listener) {
-        listener.apply(this, listenerArgs);
+        listener.apply(null, listenerArgs);
       });
     };
     
@@ -241,45 +245,381 @@
     };
     
     TicTacToe.prototype.play = function(player, cell) {
-      if (this._turn !== player) return;
-      if (this.cells[cell] !== null) return;
+      if (this._turn !== player) return false;
+      if (this.cells[cell] !== null) return false;
       
       this.cells[cell] = player;
       
       this._callListeners(this.playListeners, player, cell);
       this._nextTurn();
+      return true;
     };
     
     // -----
     
-    var game = new TicTacToe;
-    
-    game.playListeners.push(function(player, cell) {
-      document.getElementById('sq' + cell).innerHTML = ['X', 'O'][player];
-    });
-    
-    game.turnAlertListeners.push(function(player) {
-      if (player != 1) return;
+    function TicTacToeAI(game, player) {
+      var self = this;
+      this.game = game;
+      this.player = player;
       
-      for (var i = 0; i < 9; ++i) {
-        if (game.cells[i] === null) {
-          game.play(1, i);
+      // Winning combos
+      this.combos = [
+        [0, 1, 2], [0, 3, 6], [0, 4, 8],
+        [1, 4, 7],
+        [2, 5, 8], [2, 4, 6],
+        [3, 4, 5],
+        [6, 7, 8]
+      ];
+      
+      // Number of combos that each cell appears in:
+      // 3 2 3
+      // 2 4 2
+      // 3 2 3
+      
+      // Status indicates the possibility of an opponent win
+      // for each combo listed above.
+      // A status of -1 means one of the cells belongs to the AI
+      // and that combo can be ignored.
+      // A status of 0-2 indicates how many of the cells belong to the opponent.
+      this.myCombos = Array(this.combos.length);
+      this.opponentCombos = Array(this.combos.length);
+      // Cell status indicates how many times a cell appears in a combo
+      // listed in status.
+      for (var i = 0; i < this.combos.length; i++) {
+        this.myCombos[i] = true;
+        this.opponentCombos[i] = true;
+      }
+      
+      this.myWinPossibilities =       [3, 2, 3, 2, 4, 2, 3, 2, 3];
+      this.opponentWinPossibilities = [3, 2, 3, 2, 4, 2, 3, 2, 3];
+      
+      game.playListeners.push(function(player, cell) {
+        // Void this cell for the player that didn't take it.
+        if (player === self.player) {
+          self.opponentWinPossibilities[cell] = -1;
+        } else {
+          self.myWinPossibilities[cell] = -1;
+        }
+        // Update the status for all affected combos.
+        for (var i = 0; i < self.combos.length; i++) {
+          // If the cell isn't in this combo, there is nothing to update.
+          if (!~self.combos[i].indexOf(cell)) continue;
+          
+          // If the status is -1, the AI owns one of the cells
+          // so that combo doesn't matter.
+          if (self.myCombos[i] && player !== self.player) {
+            self.myCombos[i] = false;
+            // Since we just voided out a combo, subtract one
+            // from the win possibilities for each of the remaining cells.
+            self.combos[i].forEach(function(cell) {
+              if (self.myWinPossibilities[cell] === -1) return;
+              --self.myWinPossibilities[cell];
+            });
+          } else if (self.opponentCombos[i] && player === self.player) {
+            self.opponentCombos[i] = false;
+            self.combos[i].forEach(function(cell) {
+              if (self.opponentWinPossibilities[cell] === -1) return;
+              --self.opponentWinPossibilities[cell];
+            });
+          }
+        }
+      });
+      
+      game.turnAlertListeners.push(function(player) {
+        if (player !== self.player) return;
+        game.play(self.player, self.getMove());
+      });
+    }
+    
+    /*TicTacToeAI.prototype.getMove = function() {
+      var self = this;
+      var myWinMax = Math.max.apply(null, this.myWinPossibilities);
+      // Min but not -1. Unless -1 is the only value in the array.
+      var opponentWinMin = -1;
+      this.opponentWinPossibilities.forEach(function(opponentWin) {
+        if (opponentWinMin === -1) {
+          opponentWinMin = opponentWin;
+          return;
+        }
+        if (opponentWin === -1) return;
+        if (opponentWin < opponentWinMin) opponentWinMin = opponentWin;
+      });
+      
+      // Pick the cells where my chance of winning is greatest,
+      // and my opponent's chance is least.
+      var cells = this.game.cells.reduce(function(prev, val, index) {
+        if (val !== null) return prev;
+        if (self.myWinPossibilities[index] !== myWinMax) return prev;
+        if (self.opponentWinPossibilities[index] !== opponentWinMin) return prev;
+        prev.push(index);
+        return prev;
+      }, []);
+      
+      if (cells.length) return cells[0];
+      
+      alert('should not happen');
+      throw 'AHHHH';
+    };*/
+    TicTacToeAI.prototype.getMove = function() {
+      var move = null;
+      if ((move = this.getWinningMove()) !== null) {
+        return move;
+      }
+      if ((move = this.getBlockingMove()) !== null) {
+        return move;
+      }
+      if ((move = this.getBuildingMove()) !== null) {
+        return move;
+      }
+      if ((move = this.getBuildingBlockingMove()) !== null) {
+        return move;
+      }
+      return this.getPreferredCellMove();
+    };
+    
+    // A winning move is when I have two in a row, and an open space.
+    TicTacToeAI.prototype.getWinningMove = function() {
+      var i, j;
+      var combo, cell;
+      var count, openCell;
+      
+      for (i = 0; i < this.combos.length; i++) {
+        combo = this.combos[i];
+        
+        count = 0;
+        for (j = 0; j < combo.length; j++) {
+          cell = this.game.cells[combo[j]];
+          if (cell === null) {
+            openCell = combo[j];
+          } else if (cell === this.player) {
+            ++count;
+          } else {
+            break;
+          }
+        }
+        
+        if (count === 2 && openCell) {
+          return openCell;
         }
       }
-    });
+      
+      return null;
+    };
     
-    game.gameOverListeners.push(function(player) {
-      alert('winner ' + player);
-    });
+    // A blocking move is when the opponent has two in a row and an open space.
+    // Same as getWinningMove, except notice "cell !== this.player".
+    TicTacToeAI.prototype.getBlockingMove = function() {
+      var i, j;
+      var combo, cell;
+      var count, openCell;
+      
+      for (i = 0; i < this.combos.length; i++) {
+        combo = this.combos[i];
+        
+        count = 0;
+        for (j = 0; j < combo.length; j++) {
+          cell = this.game.cells[combo[j]];
+          if (cell === null) {
+            openCell = combo[j];
+          } else if (cell !== this.player) {
+            ++count;
+          } else {
+            break;
+          }
+        }
+        
+        if (count === 2 && openCell) {
+          return openCell;
+        }
+      }
+      
+      return null;
+    };
     
-    var cells = document.getElementsByTagName('td');
-    for (var i = 0; i < cells.length; ++i) {
-      cells[i].addEventListener('click', (function(i) {
-        return function(e) {
-          game.play(0, i);
-        };
-      })(i));
+    // A building move is when I have one with two open spaces around it.
+    // Since this forces the opponent to take the remaining space,
+    // I have to be careful not to pick a space where the remaining space
+    // works to their advantage: the extra space should not fall into more than
+    // one active combo that is owned by the opponent.
+    TicTacToeAI.prototype.getBuildingMove = function() {
+      var self = this;
+      var cells = Array(9);
+      var opponentCells = Array(9);
+      var combos;
+      var i, j;
+      
+      for (i = 0; i < cells.length; i++) {
+        cells[i] = false;
+        opponentCells[i] = 0;
+      }
+      
+      // Fill opponentCells by adding 1 each time the cell appears in a combo
+      // where the opponent has claimed a cell in that combo.
+      this.combos.forEach(function(combo) {
+        var hasOpponentCell = false;
+        combo.forEach(function(cellIndex) {
+          if (self.game.cells[cellIndex] === null) return;
+          if (self.game.cells[cellIndex] !== self.player) hasOpponentCell = true;
+        });
+        
+        if (hasOpponentCell) {
+          combo.forEach(function(cellIndex) {
+            if (self.game.cells[cellIndex] === null) {
+              ++opponentCells[cellIndex];
+            }
+          });
+        }
+      });
+      
+      // Find all the combos where I have one cell, the other two are open,
+      // and one is marked with a 1 or 0 in opponentCells.
+      combos = this.combos.reduce(function(prev, combo) {
+        var count = 0, myCell, lowOpponentCell = false;
+        var i;
+        var cell;
+        for (i = 0; i < combo.length; i++) {
+          cell = self.game.cells[combo[i]];
+          if (opponentCells[combo[i]] <= 1) {
+            lowOpponentCell = true;
+          }
+          if (cell === null) {
+            ++count;
+          } else if (cell === self.player) {
+            myCell = combo[i];
+          } else {
+            return prev;
+          }
+        }
+        
+        if (count === 2 && myCell && lowOpponentCell) {
+          for (i = 0; i < 3; i++) {
+            if (myCell === combo[i]) continue;
+            prev.push(combo);
+          }
+        }
+        
+        return prev;
+      }, []);
+      
+      if (!combos.length) return null;
+      for (i = 0; i < combos[0].length; i++) {
+        for (j = 0; j < combos[i].length; j++) {
+          if (opponentCells[combos[i][j]] <= 1) {
+            return combos[i][j];
+          }
+        }
+      }
+      
+      throw 'not reached!';
+    };
+    
+    // A building blocking move is a move that tries to prevent the opponent
+    // from building up to an eventual win. If the opponent has two cells
+    // in open combos, we pick a cell that belongs to both of those combos.
+    TicTacToeAI.prototype.getBuildingBlockingMove = function() {
+      var self = this;
+      var combos;
+      var i, j, k, l;
+      var cell;
+      
+      // Find combos where the opponent has one cell, and the other two are open.
+      combos = this.combos.reduce(function(prev, combo) {
+        var count = 0;
+        var i;
+        var cell;
+        var hasOpponentCell = false;
+        
+        for (i = 0; i < combo.length; i++) {
+          cell = self.game.cells[combo[i]];
+          if (cell === null) {
+            ++count;
+          } else if (cell !== self.player) {
+            hasOpponentCell = true;
+          }
+        }
+        
+        if (hasOpponentCell && count === 2) {
+          prev.push(combo);
+        }
+        
+        return prev;
+      }, []);
+      
+      if (combos.length < 2) return null;
+      
+      // For each combo, look for other combos that contain the same cell.
+      for (i = 0; i < combos.length; i++) {
+        for (j = 0; j < combos[i].length; j++) {
+          if (this.game.cells[combos[i][j]] === null) {
+            for (k = 0; k < combos.length; k++) {
+              if (k === i) continue;
+              for (l = 0; l < combos[k].length; l++) {
+                if (combos[i][j] === combos[k][l]) {
+                  return combos[i][j];
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      return null;
+    };
+    
+    // A preferred cell move is used when the game hasn't progressed enough to
+    // be able to use a strategy. We pick the first available of the center,
+    // a corner, or the other "plus sign" cells.
+    TicTacToeAI.prototype.getPreferredCellMove = function() {
+      var i;
+      var order = [4, 0, 2, 6, 8, 1, 3, 5, 7];
+      for (i = 0; i < order.length; i++) {
+        if (this.game.cells[order[i]] === null) {
+          return order[i];
+        }
+      }
+      
+      throw 'not reached!';
+    };
+    
+    // -----
+    var oldEventListeners = Array(9);
+    
+    function resetGame() {
+      var game = new TicTacToe;
+      var ai = new TicTacToeAI(game, 1);
+      
+      var i, cells;
+      
+      for (i = 0; i < 9; i++) {
+        document.getElementById('sq' + i).innerHTML = '&nbsp;';
+      }
+
+      game.playListeners.push(function(player, cell) {
+        document.getElementById('sq' + cell).innerHTML = ['X', 'O'][player];
+      });
+
+      game.gameOverListeners.push(function(player) {
+        alert('winner ' + player);
+      });
+
+      cells = document.getElementsByTagName('td');
+      for (i = 0; i < cells.length; ++i) {
+        if (oldEventListeners[i]) {
+          cells[i].removeEventListener('click', oldEventListeners[i]);
+        }
+        oldEventListeners[i] = (function(i) {
+          return function(e) {
+            game.play(0, i);
+          };
+        })(i);
+        cells[i].addEventListener('click', oldEventListeners[i]);
+      }
+      
+      return false;
     }
+    
+    document.getElementById('reset').onclick = resetGame;
+    resetGame();
   })();
 </script>
 </html>
