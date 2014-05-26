@@ -504,6 +504,7 @@
       if (!combos.length) return null;
       for (i = 0; i < combos[0].length; i++) {
         for (j = 0; j < combos[i].length; j++) {
+          if (this.game.cells[combos[i][j]] !== null) continue;
           if (opponentCells[combos[i][j]] <= 1) {
             return combos[i][j];
           }
