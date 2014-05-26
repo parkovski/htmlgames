@@ -371,9 +371,9 @@
       if ((move = this.getBuildingMove()) !== null) {
         return move;
       }
-      if ((move = this.getBuildingBlockingMove()) !== null) {
+      /*if ((move = this.getBuildingBlockingMove()) !== null) {
         return move;
-      }
+      }*/
       return this.getPreferredCellMove();
     };
     
@@ -387,6 +387,7 @@
         combo = this.combos[i];
         
         count = 0;
+        openCell = null;
         for (j = 0; j < combo.length; j++) {
           cell = this.game.cells[combo[j]];
           if (cell === null) {
@@ -398,7 +399,7 @@
           }
         }
         
-        if (count === 2 && openCell) {
+        if (count === 2 && openCell !== null) {
           return openCell;
         }
       }
@@ -417,6 +418,7 @@
         combo = this.combos[i];
         
         count = 0;
+        openCell = null;
         for (j = 0; j < combo.length; j++) {
           cell = this.game.cells[combo[j]];
           if (cell === null) {
@@ -428,7 +430,7 @@
           }
         }
         
-        if (count === 2 && openCell) {
+        if (count === 2 && openCell !== null) {
           return openCell;
         }
       }
@@ -447,6 +449,8 @@
       var opponentCells = Array(9);
       var combos;
       var i, j;
+      var hasHighCell;
+      var maxOpponent, maxCellNumber;
       
       for (i = 0; i < cells.length; i++) {
         cells[i] = false;
@@ -457,9 +461,15 @@
       // where the opponent has claimed a cell in that combo.
       this.combos.forEach(function(combo) {
         var hasOpponentCell = false;
-        combo.forEach(function(cellIndex) {
-          if (self.game.cells[cellIndex] === null) return;
-          if (self.game.cells[cellIndex] !== self.player) hasOpponentCell = true;
+        combo.every(function(cellIndex) {
+          if (self.game.cells[cellIndex] === null) return true;
+          if (self.game.cells[cellIndex] === self.player) {
+            hasOpponentCell = false;
+            return false;
+          } else {
+            hasOpponentCell = true;
+            return true;
+          }
         });
         
         if (hasOpponentCell) {
@@ -474,12 +484,12 @@
       // Find all the combos where I have one cell, the other two are open,
       // and one is marked with a 1 or 0 in opponentCells.
       combos = this.combos.reduce(function(prev, combo) {
-        var count = 0, myCell, lowOpponentCell = false;
+        var count = 0, myCell = null, lowOpponentCell = false;
         var i;
         var cell;
         for (i = 0; i < combo.length; i++) {
           cell = self.game.cells[combo[i]];
-          if (opponentCells[combo[i]] <= 1) {
+          if (opponentCells[combo[i]] <= 1 && cell === null) {
             lowOpponentCell = true;
           }
           if (cell === null) {
@@ -491,10 +501,11 @@
           }
         }
         
-        if (count === 2 && myCell && lowOpponentCell) {
+        if (count === 2 && myCell !== null && lowOpponentCell) {
           for (i = 0; i < 3; i++) {
             if (myCell === combo[i]) continue;
             prev.push(combo);
+            break;
           }
         }
         
@@ -502,14 +513,36 @@
       }, []);
       
       if (!combos.length) return null;
-      for (i = 0; i < combos[0].length; i++) {
+      
+      // Find the max opponent score in the cells in combos.
+      maxOpponent = 0;
+      maxCellNumber = 0;
+      for (i = 0; i < combos.length; i++) {
         for (j = 0; j < combos[i].length; j++) {
-          if (this.game.cells[combos[i][j]] !== null) continue;
-          if (opponentCells[combos[i][j]] <= 1) {
-            return combos[i][j];
+          if (opponentCells[combos[i][j]] > maxOpponent) {
+            maxCellNumber = combos[i][j];
+            maxOpponent = opponentCells[maxCellNumber];
           }
         }
       }
+      return maxCellNumber;
+      /*for (i = 0; i < combos.length; i++) {
+        hasHighCell = false;
+        for (j = 0; j < combos[i].length; j++) {
+          if (this.game.cells[combos[i][j]] !== null) continue;
+          if (opponentCells[combos[i][j]] > maxOpponent) {
+            maxOpponent = opponentCells[combos[i][j]];
+          }
+          if (opponentCells[combos[i][j]] > 1) {
+            hasHighCell = true;
+          }
+        }
+        for (j = 0; j < combos[i].length; j++) {
+          if (this.game.cells[combos[i][j]] !== null) continue;
+          if (combos[i][j] === lowCell) continue;
+          if (combos[i][j] === maxOpponent) return combos[i][j];
+        }
+      }*/
       
       throw 'not reached!';
     };
@@ -532,9 +565,9 @@
         
         for (i = 0; i < combo.length; i++) {
           cell = self.game.cells[combo[i]];
-          if (cell === null) {
+          if (cell === null || cell === self.player) {
             ++count;
-          } else if (cell !== self.player) {
+          } else {
             hasOpponentCell = true;
           }
         }
