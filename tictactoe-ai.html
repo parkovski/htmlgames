@@ -116,9 +116,13 @@
 <body>
   <div id="pushdown"></div>
   <div id="screen">
-    Hello, it is time for some tic tac toe!<br>
-    I'll get the board ready. <a id="reset" href="#">Reset game.</a> <span id="cursor">&nbsp;</span>
-    <br><br><br><br><br>
+    <span id="text">
+      Hello, it is time for some tic tac toe!<br>
+      I'll get the board ready.
+    </span>
+    <span id="cursor">&nbsp;</span><br>
+    <a id="reset" href="#">Reset game.</a>
+    <br><br><br><br>
     <table>
       <tbody>
         <tr>
@@ -146,7 +150,48 @@
     
     // Ye Olde Screen
     function YOS(elem) {
+      this.elem = elem;
+      this.done = [];
+      this.interval = null;
     }
+    
+    YOS.prototype.write = function(text, done) {
+      var self = this;
+      if (done) this.done.push(done);
+      if (this.interval) {
+        this.text += text;
+        return;
+      }
+      this.text = text;
+      this.interval = setInterval(function() {
+        self._writeChar();
+      }, 40);
+    };
+    
+    YOS.prototype.clear = function(text) {
+      if (this.interval) clearInterval(this.interval);
+      this.interval = null;
+      this.text = '';
+      this.done.forEach(function(done) {
+        done();
+      });
+      this.done.length = 0;
+      this.elem.innerHTML = text || '';
+    };
+    
+    YOS.prototype._writeChar = function() {
+      var ch = this.text.substr(0, 1);
+      this.text = this.text.substr(1);
+      this.elem.innerHTML += ch;
+      if (this.text.length === 0) {
+        clearInterval(this.interval);
+        this.interval = null;
+        this.done.forEach(function(done) {
+          done();
+        });
+        this.done.length = 0;
+      }
+    };
     
     // -----
     
@@ -428,11 +473,21 @@
     // -----
     var oldEventListeners = Array(9);
     
-    function resetGame() {
+    var yos = new YOS(document.getElementById('text'));
+    
+    function resetGame(longMessage) {
       var game = new TicTacToe;
       var ai = new TicTacToeAI(game, 1);
       
       var i, cells;
+      
+      yos.clear();
+      if (longMessage) {
+        yos.write('Welcome to Tic-Tac-Toe! ');
+        yos.write('I am the master of this game. You can\'t beat me!');
+      } else {
+        yos.write('Haven\'t given up yet?');
+      }
       
       for (i = 0; i < 9; i++) {
         document.getElementById('sq' + i).innerHTML = '&nbsp;';
@@ -443,8 +498,14 @@
       });
 
       game.gameOverListeners.push(function(player) {
-        var message = { 0: 'tie!', 1: 'you win!', 2: 'computer wins!' };
-        alert(message[player+1]);
+        yos.clear();
+        if (player === -1) {
+          yos.write('It was a tie!');
+        } else if (player === 0) {
+          yos.write('Noooo! How is this possible!');
+        } else {
+          yos.write('I beat you! I am still the best!');
+        }
       });
 
       cells = document.getElementsByTagName('td');
@@ -459,12 +520,13 @@
         })(i);
         cells[i].addEventListener('click', oldEventListeners[i]);
       }
-      
-      return false;
     }
     
-    document.getElementById('reset').onclick = resetGame;
-    resetGame();
+    document.getElementById('reset').onclick = function() {
+      resetGame(false);
+      return false;
+    };
+    resetGame(true);
   })();
 </script>
 </html>
