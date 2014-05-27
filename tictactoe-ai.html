@@ -270,115 +270,31 @@
         [3, 4, 5],
         [6, 7, 8]
       ];
-      
-      // Number of combos that each cell appears in:
-      // 3 2 3
-      // 2 4 2
-      // 3 2 3
-      
-      // Status indicates the possibility of an opponent win
-      // for each combo listed above.
-      // A status of -1 means one of the cells belongs to the AI
-      // and that combo can be ignored.
-      // A status of 0-2 indicates how many of the cells belong to the opponent.
-      this.myCombos = Array(this.combos.length);
-      this.opponentCombos = Array(this.combos.length);
-      // Cell status indicates how many times a cell appears in a combo
-      // listed in status.
-      for (var i = 0; i < this.combos.length; i++) {
-        this.myCombos[i] = true;
-        this.opponentCombos[i] = true;
-      }
-      
-      this.myWinPossibilities =       [3, 2, 3, 2, 4, 2, 3, 2, 3];
-      this.opponentWinPossibilities = [3, 2, 3, 2, 4, 2, 3, 2, 3];
-      
-      game.playListeners.push(function(player, cell) {
-        // Void this cell for the player that didn't take it.
-        if (player === self.player) {
-          self.opponentWinPossibilities[cell] = -1;
-        } else {
-          self.myWinPossibilities[cell] = -1;
-        }
-        // Update the status for all affected combos.
-        for (var i = 0; i < self.combos.length; i++) {
-          // If the cell isn't in this combo, there is nothing to update.
-          if (!~self.combos[i].indexOf(cell)) continue;
-          
-          // If the status is -1, the AI owns one of the cells
-          // so that combo doesn't matter.
-          if (self.myCombos[i] && player !== self.player) {
-            self.myCombos[i] = false;
-            // Since we just voided out a combo, subtract one
-            // from the win possibilities for each of the remaining cells.
-            self.combos[i].forEach(function(cell) {
-              if (self.myWinPossibilities[cell] === -1) return;
-              --self.myWinPossibilities[cell];
-            });
-          } else if (self.opponentCombos[i] && player === self.player) {
-            self.opponentCombos[i] = false;
-            self.combos[i].forEach(function(cell) {
-              if (self.opponentWinPossibilities[cell] === -1) return;
-              --self.opponentWinPossibilities[cell];
-            });
-          }
-        }
-      });
-      
+            
       game.turnAlertListeners.push(function(player) {
         if (player !== self.player) return;
         game.play(self.player, self.getMove());
       });
     }
     
-    /*TicTacToeAI.prototype.getMove = function() {
-      var self = this;
-      var myWinMax = Math.max.apply(null, this.myWinPossibilities);
-      // Min but not -1. Unless -1 is the only value in the array.
-      var opponentWinMin = -1;
-      this.opponentWinPossibilities.forEach(function(opponentWin) {
-        if (opponentWinMin === -1) {
-          opponentWinMin = opponentWin;
-          return;
-        }
-        if (opponentWin === -1) return;
-        if (opponentWin < opponentWinMin) opponentWinMin = opponentWin;
-      });
-      
-      // Pick the cells where my chance of winning is greatest,
-      // and my opponent's chance is least.
-      var cells = this.game.cells.reduce(function(prev, val, index) {
-        if (val !== null) return prev;
-        if (self.myWinPossibilities[index] !== myWinMax) return prev;
-        if (self.opponentWinPossibilities[index] !== opponentWinMin) return prev;
-        prev.push(index);
-        return prev;
-      }, []);
-      
-      if (cells.length) return cells[0];
-      
-      alert('should not happen');
-      throw 'AHHHH';
-    };*/
     TicTacToeAI.prototype.getMove = function() {
       var move = null;
-      if ((move = this.getWinningMove()) !== null) {
+      if ((move = this.getTwoInARowMove(true)) !== null) {
         return move;
       }
-      if ((move = this.getBlockingMove()) !== null) {
+      if ((move = this.getTwoInARowMove(false)) !== null) {
         return move;
       }
       if ((move = this.getBuildingMove()) !== null) {
         return move;
       }
-      /*if ((move = this.getBuildingBlockingMove()) !== null) {
-        return move;
-      }*/
       return this.getPreferredCellMove();
     };
     
-    // A winning move is when I have two in a row, and an open space.
-    TicTacToeAI.prototype.getWinningMove = function() {
+    // A two in a row move is either winning or blocking -
+    // If samePlayer is true, we add one to make three in a row and win.
+    // If samePlayer is false, we block opponent's two in a row.
+    TicTacToeAI.prototype.getTwoInARowMove = function(samePlayer) {
       var i, j;
       var combo, cell;
       var count, openCell;
@@ -392,38 +308,7 @@
           cell = this.game.cells[combo[j]];
           if (cell === null) {
             openCell = combo[j];
-          } else if (cell === this.player) {
-            ++count;
-          } else {
-            break;
-          }
-        }
-        
-        if (count === 2 && openCell !== null) {
-          return openCell;
-        }
-      }
-      
-      return null;
-    };
-    
-    // A blocking move is when the opponent has two in a row and an open space.
-    // Same as getWinningMove, except notice "cell !== this.player".
-    TicTacToeAI.prototype.getBlockingMove = function() {
-      var i, j;
-      var combo, cell;
-      var count, openCell;
-      
-      for (i = 0; i < this.combos.length; i++) {
-        combo = this.combos[i];
-        
-        count = 0;
-        openCell = null;
-        for (j = 0; j < combo.length; j++) {
-          cell = this.game.cells[combo[j]];
-          if (cell === null) {
-            openCell = combo[j];
-          } else if (cell !== this.player) {
+          } else if (samePlayer === (cell === this.player)) {
             ++count;
           } else {
             break;
@@ -445,15 +330,12 @@
     // one active combo that is owned by the opponent.
     TicTacToeAI.prototype.getBuildingMove = function() {
       var self = this;
-      var cells = Array(9);
       var opponentCells = Array(9);
       var combos;
       var i, j;
-      var hasHighCell;
       var maxOpponent, maxCellNumber;
       
-      for (i = 0; i < cells.length; i++) {
-        cells[i] = false;
+      for (i = 0; i < opponentCells.length; i++) {
         opponentCells[i] = 0;
       }
       
@@ -526,78 +408,6 @@
         }
       }
       return maxCellNumber;
-      /*for (i = 0; i < combos.length; i++) {
-        hasHighCell = false;
-        for (j = 0; j < combos[i].length; j++) {
-          if (this.game.cells[combos[i][j]] !== null) continue;
-          if (opponentCells[combos[i][j]] > maxOpponent) {
-            maxOpponent = opponentCells[combos[i][j]];
-          }
-          if (opponentCells[combos[i][j]] > 1) {
-            hasHighCell = true;
-          }
-        }
-        for (j = 0; j < combos[i].length; j++) {
-          if (this.game.cells[combos[i][j]] !== null) continue;
-          if (combos[i][j] === lowCell) continue;
-          if (combos[i][j] === maxOpponent) return combos[i][j];
-        }
-      }*/
-      
-      throw 'not reached!';
-    };
-    
-    // A building blocking move is a move that tries to prevent the opponent
-    // from building up to an eventual win. If the opponent has two cells
-    // in open combos, we pick a cell that belongs to both of those combos.
-    TicTacToeAI.prototype.getBuildingBlockingMove = function() {
-      var self = this;
-      var combos;
-      var i, j, k, l;
-      var cell;
-      
-      // Find combos where the opponent has one cell, and the other two are open.
-      combos = this.combos.reduce(function(prev, combo) {
-        var count = 0;
-        var i;
-        var cell;
-        var hasOpponentCell = false;
-        
-        for (i = 0; i < combo.length; i++) {
-          cell = self.game.cells[combo[i]];
-          if (cell === null || cell === self.player) {
-            ++count;
-          } else {
-            hasOpponentCell = true;
-          }
-        }
-        
-        if (hasOpponentCell && count === 2) {
-          prev.push(combo);
-        }
-        
-        return prev;
-      }, []);
-      
-      if (combos.length < 2) return null;
-      
-      // For each combo, look for other combos that contain the same cell.
-      for (i = 0; i < combos.length; i++) {
-        for (j = 0; j < combos[i].length; j++) {
-          if (this.game.cells[combos[i][j]] === null) {
-            for (k = 0; k < combos.length; k++) {
-              if (k === i) continue;
-              for (l = 0; l < combos[k].length; l++) {
-                if (combos[i][j] === combos[k][l]) {
-                  return combos[i][j];
-                }
-              }
-            }
-          }
-        }
-      }
-      
-      return null;
     };
     
     // A preferred cell move is used when the game hasn't progressed enough to
