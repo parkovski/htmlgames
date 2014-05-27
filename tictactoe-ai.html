@@ -443,7 +443,8 @@
       });
 
       game.gameOverListeners.push(function(player) {
-        alert('winner ' + player);
+        var message = { -1: 'tie!', 0: 'you win!', 1: 'computer wins!' };
+        alert(message[player]);
       });
 
       cells = document.getElementsByTagName('td');
