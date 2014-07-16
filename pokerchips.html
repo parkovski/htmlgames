@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Poker chips</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      padding: 0;
+      margin: 0;
+      border: 0;
+    }
+    body, html {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+    #table {
+      position: absolute;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #table, .half-table, .quarter-table {
+      background-color: #065f06;
+    }
+    .half-table {
+      position: relative;
+      height: 50%;
+      width: 100%;
+    }
+    .half-table:first-child {
+      border-bottom: 4px solid #224822;
+    }
+    .quarter-table {
+      height: 100%;
+    }
+    .quarter-table:first-child {
+      float: left;
+      width: 50%;
+      border-right: 4px solid #224822;
+    }
+    .quarter-table.disabled {
+      background-color: #728b72;
+    }
+    #pot {
+      position: absolute;
+      z-index: 2;
+      left: 25%;
+      top: 25%;
+      width: 50%;
+      height: 50%;
+      border: 4px solid #224822;
+      border-radius: 999999px;
+      background-color: #087608;
+    }
+    
+    .chip {
+      display: inline-block;
+      border: 4px solid #333;
+      border-radius: 999999px;
+      width: 100px;
+      height: 100px;
+    }
+    
+    .chip.a {
+      background-color: #ededed;
+    }
+    .chip.b {
+      background-color: red;
+    }
+    .chip.c {
+      background-color: blue;
+    }
+    .chip.d {
+      background-color: yellow;
+    }
+    .chip.e {
+      background-color: black;
+    }
+  </style>
+</head>
+<body>
+  <div id="table">
+    <div class="half-table">
+      <div class="quarter-table">
+        <div class="chip a"></div>
+        <div class="chip b"></div>
+        <div class="chip c"></div>
+        <div class="chip d"></div>
+        <div class="chip e"></div>
+      </div>
+      <div class="quarter-table"></div>
+    </div>
+    <div class="half-table">
+      <div class="quarter-table"></div>
+      <div class="quarter-table"></div>
+    </div>
+    <div id="pot">
+    </div>
+  </div>
+  <script>
+    (function() {
+      'use strict';
+      
+      function enableDrag(elems) {
+      }
+
+      //-----
+
+      enableDrag(document.querySelectorAll('.chip'));
+    })();
+  </script>
+</body>
+</html>
