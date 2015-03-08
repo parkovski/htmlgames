@@ -251,7 +251,7 @@
 
     function setStage(st) {
       stage = st;
-      instrElem.innerText
+      instrElem.innerHTML
         = directions[stage].replace('$player', playerNames[player]);
     }
 
@@ -323,13 +323,13 @@
       }
 
       suit = {
-        'S': '\u2660',
-        'H': '\u2665',
-        'D': '\u2666',
-        'C': '\u2663'
+        'S': '&#9824;', // \u2660
+        'H': '&#9829', // \u2665
+        'D': '&#9830', // \u2666
+        'C': '&#9827;' // \u2663
       }[suit];
 
-      card.innerText = val + ' ' + suit;
+      card.innerHTML = val + ' ' + suit;
     }
 
     function doAction() {
@@ -384,7 +384,7 @@
         if (discard.length) {
           assignCard(document.getElementById('discard'), discard[0]);
         } else {
-          document.getElementById('discard').innerText = '';
+          document.getElementById('discard').innerHTML = '';
         }
       }
     };
@@ -443,7 +443,7 @@
       }
       document.getElementById('setplayers').style.visibility = 'inherit';
       document.getElementById('setplayers').innerHTML = '';
-      document.getElementById('setplayers').innerText = 'Last rounds';
+      document.getElementById('setplayers').innerHTML = 'Last rounds';
       lastPlayer = player - 1;
       if (lastPlayer == -1) lastPlayer = players.length - 1;
       return false;
@@ -527,7 +527,7 @@
       } else {
         winner = 'Winner: ' + winner;
       }
-      document.getElementById('setplayers').innerText = winner;
+      document.getElementById('setplayers').innerHTML = winner;
 
       directions.gameOver = message;
       setStage('gameOver');
